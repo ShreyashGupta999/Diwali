@@ -1,0 +1,159 @@
+<!-- Author: Shreyash -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diwali 2024</title>
+    <style>
+        body {
+            margin: 0;
+            background: black;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Resize canvas to fit the screen
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    class Firework {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height;
+            this.sx = Math.random() * 3 - 1.5;
+            this.sy = Math.random() * -3 - 3;
+            this.size = Math.random() * 2 + 1;
+            this.color = this.getRandomColor();
+            this.shouldExplode = false;
+        }
+
+        getRandomColor() {
+            const colorVal = Math.floor(Math.random() * 0xffffff);
+            return {
+                r: (colorVal >> 16) & 255,
+                g: (colorVal >> 8) & 255,
+                b: colorVal & 255,
+            };
+        }
+
+        update() {
+            this.sy += this.sy >= -2 || this.y <= 100 || this.x <= 0 || this.x >= canvas.width ? 0 : 0.01;
+            this.x += this.sx;
+            this.y += this.sy;
+            this.shouldExplode = this.sy >= -2 || this.y <= 100;
+        }
+
+        draw() {
+            ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.sx = Math.random() * 3 - 1.5;
+            this.sy = Math.random() * 3 - 1.5;
+            this.size = Math.random() * 2 + 1;
+            this.color = color;
+            this.life = 100;
+        }
+
+        update() {
+            this.x += this.sx;
+            this.y += this.sy;
+            this.life -= 1;
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life / 100})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const fireworks = [];
+    const particles = [];
+    const texts = [];
+
+    function spawnFirework() {
+        if (Math.random() < 0.05) {
+            fireworks.push(new Firework());
+        }
+    }
+
+    function explodeFirework(firework) {
+        texts.push({
+            text: "Happy Diwali",
+            x: firework.x,
+            y: firework.y,
+            life: 50
+        });
+
+        for (let i = 0; i < 50; i++) {
+            particles.push(new Particle(firework.x, firework.y, firework.color));
+        }
+    }
+
+    function updateEntities(entities, updateFn, removeCondition) {
+        for (let i = entities.length - 1; i >= 0; i--) {
+            updateFn(entities[i]);
+            if (removeCondition(entities[i])) {
+                entities.splice(i, 1);
+            }
+        }
+    }
+
+    function drawText() {
+        texts.forEach((textObj) => {
+            ctx.fillStyle = "blue";
+            ctx.font = "bold 12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(textObj.text, textObj.x, textObj.y);
+        });
+    }
+
+    function animate() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        spawnFirework();
+
+        updateEntities(fireworks, (fw) => {
+            fw.update();
+            fw.draw();
+            if (fw.shouldExplode) explodeFirework(fw);
+        }, (fw) => fw.shouldExplode);
+
+        updateEntities(particles, (p) => {
+            p.update();
+            p.draw();
+        }, (p) => p.life <= 0);
+
+        updateEntities(texts, (textObj) => textObj.life--, (textObj) => textObj.life <= 0);
+
+        drawText();
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+</script>
+</body>
+</html>
