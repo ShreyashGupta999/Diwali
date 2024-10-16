@@ -1,2 +1,0 @@
-# Diwali
-Diwali Animation
